@@ -1,0 +1,369 @@
+.home-page {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.image-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene-wrapper {
+  position: relative;
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+.table-image {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+
+.book-anchor {
+  position: absolute;
+  width: 20%;
+  top: 5%;
+  right: 35%;
+  /* Anchor is just for positioning, minimal styles */
+  z-index: 100;
+  /* Ensure it stays above when expanded */
+}
+
+.book-container {
+  width: 100%;
+  height: auto;
+  transform-origin: center center;
+  transform-origin: center center;
+  /* Snappier ease-out curve */
+  transition: transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1.0);
+  will-change: transform;
+  cursor: pointer;
+}
+
+.book-rotator {
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.1s ease-out;
+  /* Faster for rotation/frames */
+  display: grid;
+  grid-template-areas: "stack";
+}
+
+.book-image-layer {
+  grid-area: stack;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  opacity: 0;
+  /* Removed transition to avoid ghosting artifacts between frames */
+}
+
+.book-image-layer.visible {
+  opacity: 1;
+}
+
+
+.book-content-bg {
+  grid-area: stack;
+  width: 50%;
+  max-height: 85%;
+  place-self: center;
+  background-color: #f5f6ee;
+  opacity: 0;
+  pointer-events: none;
+  /* Prevent blocking clicks when invisible */
+  transition: opacity 0.2s ease-out;
+  z-index: 9;
+  transform: translateX(10%) translateY(-2%);
+  /* Soft edges for the background itself if needed, or keeping it sharp to fill the 'image area' */
+  border-radius: 2px;
+}
+
+.book-content-bg.visible {
+  opacity: 1;
+  pointer-events: auto;
+  /* Reduced delay from 0.2s to 0.05s for faster appearance */
+  transition: opacity 0.3s 0.05s ease;
+}
+
+.book-content-image {
+  grid-area: stack;
+  width: 50%;
+  max-height: 85%;
+  place-self: center;
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+  /* Critical: fix click interception in INITIAL state */
+  transition: opacity 0.2s ease-out;
+  /* Instant disappear turned into fast fade */
+  z-index: 10;
+  transform: translateX(10%) translateY(-2%);
+  /* Shift to right page */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%), radial-gradient(ellipse at 50% 55%, black 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent, black 5%), radial-gradient(ellipse at 50% 55%, black 60%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+.book-content-image.visible {
+  opacity: 1;
+  pointer-events: auto;
+  /* Reduced delay from 0.2s to 0.05s for faster appearance */
+  transition: opacity 0.3s 0.05s ease;
+  /* Fade in with delay */
+}
+
+
+
+.back-view-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.iframe-container {
+  width: 85vw;
+  height: 85vh;
+  max-width: 1200px;
+  background: #fff;
+  border-radius: 24px;
+  /* More rounded */
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: scale(0.95);
+}
+
+.iframe-container.visible {
+  transform: scale(1);
+}
+
+.loading-spinner-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+}
+
+.content-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* ============ 新增样式 - 状态机支持 ============ */
+
+/* 呼吸动画 - INITIAL 状态 */
+@keyframes breathe {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+    filter: drop-shadow(0 0 20px rgba(255, 200, 87, 0.3));
+  }
+
+  50% {
+    transform: translateY(-8px);
+    filter: drop-shadow(0 0 30px rgba(255, 200, 87, 0.5));
+  }
+}
+
+.book-container.breathing {
+  animation: breathe 3s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.book-container.breathing:hover {
+  animation-duration: 1.5s;
+  filter: drop-shadow(0 0 40px rgba(255, 200, 87, 0.8));
+  transform: scale(1.05);
+}
+
+/* 动画禁用交互 */
+.book-container.animating {
+  pointer-events: none;
+}
+
+/* Hover 增强反馈 */
+.book-container.hover-enhanced {
+  filter: drop-shadow(0 0 30px rgba(255, 200, 87, 0.7));
+}
+
+/* 翻页动画图层 */
+.flip-animation-layer {
+  grid-area: stack;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  opacity: 1;
+  z-index: 11;
+}
+
+/* 导航按钮 */
+.navigation-buttons {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 101;
+}
+
+.nav-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.nav-button:hover {
+  transform: scale(1.1);
+  background: white;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.nav-button:active {
+  transform: scale(0.95);
+}
+
+.nav-button.transparent-btn {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+  box-shadow: none;
+}
+
+.nav-button.transparent-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.8);
+  color: white;
+  transform: scale(1.1);
+}
+
+/* 加载覆盖层 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  gap: 20px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f0f0f0;
+  border-top-color: #ff9800;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-overlay p {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* 错误提示 */
+.error-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff4444;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  z-index: 2000;
+  animation: slide-in 0.3s ease-out;
+  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 关闭按钮 */
+.close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 1001;
+}
+
+.close-button:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
+}
+
+.close-button:active {
+  transform: scale(0.95);
+}

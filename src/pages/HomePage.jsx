@@ -85,15 +85,15 @@ const HomePage = () => {
   const getCurrentContent = () => contents[currentContentIndex] || null
 
   const shouldShowContent = () => {
-    // 允许在 OPENING 的最后阶段（frame >= 3）就开始显示内容
-    return (appState === APP_STATES.BOOK || appState === APP_STATES.LOADING || appState === APP_STATES.OPENING) && frame >= 3
+    // 在 frame 4 时显示内容，此时旋转已归零
+    return (appState === APP_STATES.BOOK || appState === APP_STATES.LOADING || appState === APP_STATES.OPENING) && frame >= 4
   }
 
   const getRotateZ = () => {
     // 翻页动画不需要 Z 轴旋转（开书动画的 Z 轴逻辑会干扰翻页）
     if (appState === APP_STATES.SWITCHING) return 0
     if (frame === 4) return 0
-    return (frame / 3) * 20
+    return (frame / 3) * 15
   }
 
   // ============ 事件处理器 - 状态转换 ============
@@ -234,11 +234,15 @@ const HomePage = () => {
   const handleBookMouseEnter = () => {
     if (appState === APP_STATES.INITIAL) {
       setIsBookHovered(true)
+      setFrame(1)
     }
   }
 
   const handleBookMouseLeave = () => {
     setIsBookHovered(false)
+    if (appState === APP_STATES.INITIAL) {
+      setFrame(0)
+    }
   }
 
   // ============ Effects - 动画系统 ============
@@ -317,21 +321,34 @@ const HomePage = () => {
   useEffect(() => {
     if (appState !== APP_STATES.SWITCHING) return
 
-    const frameInterval = 120 // Slowed down from 66 to 120 for visibility
-    const totalFrames = 4 // 0, 1, 2, 3
-    let currentFlipIndex = 0
+    const frameInterval = 100 // Speed updated to 80ms by user request
+    const totalFrames = 5 // 0, 1, 2, 3, 4
+
+    // Initial frame depends on direction
+    // If next: start at 0, go to 4
+    // If prev: start at 4, go to 0
+    let currentFlipIndex = switchDirection === 'next' ? 0 : totalFrames - 1
+
+    // Set initial frame immediately
+    setFrame(currentFlipIndex)
 
     const timer = setInterval(() => {
-      currentFlipIndex++
-
-      // Update visual state!
-      if (currentFlipIndex < totalFrames) {
-        setFrame(currentFlipIndex)
+      if (switchDirection === 'next') {
+        currentFlipIndex++
+      } else {
+        currentFlipIndex--
       }
 
-      if (currentFlipIndex >= totalFrames) {
+      // Check bounds
+      const isFinished = switchDirection === 'next'
+        ? currentFlipIndex >= totalFrames
+        : currentFlipIndex < 0
+
+      if (isFinished) {
         clearInterval(timer)
         handleSwitchingComplete()
+      } else {
+        setFrame(currentFlipIndex)
       }
     }, frameInterval)
 
@@ -458,90 +475,84 @@ const HomePage = () => {
           className="table-image"
         />
 
-        {/* 书籍容器 - 在 CONTENT 状态下隐藏 */}
-        {appState !== APP_STATES.CONTENT && (
-          <div className="book-anchor" ref={anchorRef}>
+        {/* 书籍容器 - 始终渲染，但在 CONTENT 状态下可能被 overlay 遮挡 */}
+        <div className="book-anchor" ref={anchorRef}>
+          <div
+            className={getBookContainerClasses()}
+            onClick={handleClickBook}
+            onMouseEnter={handleBookMouseEnter}
+            onMouseLeave={handleBookMouseLeave}
+            style={{
+              transform: `translate(${layoutTransform.x}px, ${layoutTransform.y}px) scale(${layoutTransform.scale})`
+            }}
+          >
             <div
-              className={getBookContainerClasses()}
-              onClick={handleClickBook}
-              onMouseEnter={handleBookMouseEnter}
-              onMouseLeave={handleBookMouseLeave}
+              className="book-rotator"
               style={{
-                transform: `translate(${layoutTransform.x}px, ${layoutTransform.y}px) scale(${layoutTransform.scale})`
+                transform: `perspective(1000px) rotateY(${transform.rotateY}deg) rotateX(${transform.rotateX}deg) rotateZ(${getRotateZ()}deg)`,
+                transition: frame >= 3 ? 'none' : 'transform 0.1s ease-out'
               }}
             >
-              <div
-                className="book-rotator"
-                style={{
-                  transform: `perspective(1000px) rotateY(${transform.rotateY}deg) rotateX(${transform.rotateX}deg) rotateZ(${getRotateZ()}deg)`,
-                  transition: frame === 4 ? 'none' : 'transform 0.1s ease-out'
-                }}
-              >
-                {/* 书籍打开/切换动画帧 */}
-                {[0, 1, 2, 3, 4].map((index) => (
-                  <img
-                    key={`book-${index}`}
-                    src={`/book-${index}.webp`}
-                    alt={`Book Frame ${index}`}
-                    className={`book-image-layer ${index === frame && appState !== APP_STATES.SWITCHING ? 'visible' : ''}`}
-                  />
-                ))}
-
-                {/* 翻页动画帧（SWITCHING 状态） - 预渲染所有帧以避免闪烁 */}
-                {[0, 1, 2, 3, 4].map((index) => (
-                  <img
-                    key={`fanye-${index}`}
-                    src={`/fanye-${index}.webp`}
-                    alt={`Flip Frame ${index}`}
-                    className={`flip-animation-layer ${appState === APP_STATES.SWITCHING && frame === index ? 'visible' : ''}`}
-                  />
-                ))}
-
-                {/* 书籍背景（内容打开时显示） */}
-                <div
-                  className={`book-content-bg ${shouldShowContent() ? 'visible' : ''}`}
+              {/* 书籍打开/切换动画帧 */}
+              {[0, 1, 2, 3, 4].map((index) => (
+                <img
+                  key={`book-${index}`}
+                  src={`/book-${index}.webp`}
+                  alt={`Book Frame ${index}`}
+                  className={`book-image-layer ${index === frame && appState !== APP_STATES.SWITCHING ? 'visible' : ''}`}
                 />
+              ))}
 
-                {/* 当前内容的封面 */}
-                {getCurrentContent() && (
-                  <img
-                    src={getCurrentContent().coverImage}
-                    alt="Book Cover"
-                    className={`book-content-image ${shouldShowContent() ? 'visible' : ''}`}
-                    onClick={handleViewContent}
-                    style={{ cursor: 'pointer' }}
-                  />
-                )}
-              </div>
+              {/* 翻页动画帧（SWITCHING 状态） - 预渲染所有帧以避免闪烁 */}
+              {[0, 1, 2, 3, 4].map((index) => (
+                <img
+                  key={`fanye-${index}`}
+                  src={`/fanye-${index}.webp`}
+                  alt={`Flip Frame ${index}`}
+                  className={`flip-animation-layer ${appState === APP_STATES.SWITCHING && frame === index ? 'visible' : ''}`}
+                />
+              ))}
 
-              {/* 只在 BOOK 状态显示导航按钮 */}
-              {appState === APP_STATES.BOOK && contents.length > 1 && (
-                <div className="navigation-buttons">
-                  <button
-                    className="nav-button nav-prev"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSwitchContent('prev')
-                    }}
-                    aria-label="Previous article"
-                  >
-                    ◀
-                  </button>
-                  <button
-                    className="nav-button nav-next transparent-btn"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleSwitchContent('next')
-                    }}
-                    aria-label="Next article"
-                  >
-                    ▶
-                  </button>
-                </div>
+              {/* 书籍背景（内容打开时显示） */}
+              <div
+                className={`book-content-bg ${shouldShowContent() ? 'visible' : ''}`}
+              />
+
+              {/* 当前内容的封面 */}
+              {getCurrentContent() && (
+                <img
+                  src={getCurrentContent().coverImage}
+                  alt="Book Cover"
+                  className={`book-content-image ${shouldShowContent() ? 'visible' : ''}`}
+                  onClick={handleViewContent}
+                  style={{ cursor: 'pointer' }}
+                />
               )}
             </div>
+
+            {/* 只在 BOOK 状态显示导航按钮 */}
+            {appState === APP_STATES.BOOK && contents.length > 1 && (
+              <div className="navigation-buttons">
+                <button
+                  className="nav-button nav-prev transparent-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleSwitchContent('prev')
+                  }}
+                  aria-label="Previous article"
+                />
+                <button
+                  className="nav-button nav-next transparent-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleSwitchContent('next')
+                  }}
+                  aria-label="Next article"
+                />
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* 加载指示器 */}

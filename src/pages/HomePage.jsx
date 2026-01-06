@@ -84,13 +84,6 @@ const HomePage = () => {
 
   const getCurrentContent = () => contents[currentContentIndex] || null
 
-  const getBookFrameSrc = () => {
-    if (appState === APP_STATES.SWITCHING) {
-      return `/fanye-${Math.min(frame, 3)}.webp`
-    }
-    return `/book-${frame}.webp`
-  }
-
   const shouldShowContent = () => {
     // 允许在 OPENING 的最后阶段（frame >= 3）就开始显示内容
     return (appState === APP_STATES.BOOK || appState === APP_STATES.LOADING || appState === APP_STATES.OPENING) && frame >= 3
@@ -494,15 +487,15 @@ const HomePage = () => {
                   />
                 ))}
 
-                {/* 翻页动画帧（SWITCHING 状态） */}
-                {appState === APP_STATES.SWITCHING && (
+                {/* 翻页动画帧（SWITCHING 状态） - 预渲染所有帧以避免闪烁 */}
+                {[0, 1, 2, 3, 4].map((index) => (
                   <img
-                    key={`fanye-${frame}`}
-                    src={`/fanye-${Math.min(frame, 3)}.webp`}
-                    alt={`Flip Frame ${frame}`}
-                    className="flip-animation-layer visible"
+                    key={`fanye-${index}`}
+                    src={`/fanye-${index}.webp`}
+                    alt={`Flip Frame ${index}`}
+                    className={`flip-animation-layer ${appState === APP_STATES.SWITCHING && frame === index ? 'visible' : ''}`}
                   />
-                )}
+                ))}
 
                 {/* 书籍背景（内容打开时显示） */}
                 <div

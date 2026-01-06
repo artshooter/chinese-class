@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import './HomePage.css'
 
+// 导入文章内容组件
+import BackViewContent from '../components/back-view/Content.jsx'
+import GuxiangContent from '../components/guxiang/Content.jsx'
+import FarewellContent from '../components/farewell-to-cambridge/Content.jsx'
+
 // ============ 常量定义 ============
 
 const APP_STATES = {
@@ -25,21 +30,21 @@ const ANIMATION_CONFIG = {
 const CONTENTS = [
   {
     id: 'article1',
-    title: 'Back View',
+    title: '背影',
     coverImage: '/back-view.webp',
-    url: 'http://localhost:3000/zh/back-view'
+    Component: BackViewContent
   },
   {
     id: 'article2',
-    title: 'Runtu',
+    title: '故乡',
     coverImage: '/rentu.webp',
-    url: 'http://localhost:3000/zh/guxiang' // Assuming guxiang is the route based on previous context, or use placeholder
+    Component: GuxiangContent
   },
   {
     id: 'article3',
-    title: 'Farewell to Cambridge',
+    title: '再别康桥',
     coverImage: '/farewell-to-cambridge.webp',
-    url: 'http://localhost:3000/zh/farewell-to-cambridge'
+    Component: FarewellContent
   }
   // 可以添加更多内容
 ]
@@ -154,24 +159,8 @@ const HomePage = () => {
 
     if (appState !== APP_STATES.BOOK) return
 
-    setLoadError(null)
-    setAppState(APP_STATES.LOADING)
-
-    // 启动加载超时 - 使用 ref 来存储超时，避免闭包问题
-    const timeout = setTimeout(() => {
-      setAppState(prevState => {
-        if (prevState === APP_STATES.LOADING) {
-          setLoadError('加载超时，请重试')
-          setAppState(APP_STATES.BOOK)
-          setTimeout(() => {
-            setLoadError(null)
-          }, ANIMATION_CONFIG.ERROR_DISPLAY_DURATION)
-        }
-        return prevState
-      })
-    }, ANIMATION_CONFIG.LOAD_TIMEOUT)
-
-    loadTimeoutRef.current = timeout
+    // 内联组件直接切换到CONTENT状态，无需加载过程
+    setAppState(APP_STATES.CONTENT)
   }
 
   const handleLoadSuccess = () => {
@@ -565,41 +554,22 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* 内容详情覆盖层（iframe） */}
-      {/* 内容详情覆盖层（iframe） */}
-      {(appState === APP_STATES.CONTENT || appState === APP_STATES.LOADING) && getCurrentContent() && (
-        <div className={`back-view-overlay ${appState === APP_STATES.CONTENT ? 'active' : ''}`} onClick={handleCloseContent}>
-
-          {/* 加载指示器 - 移到这里，在 overlay 内部显示 */}
-          {appState === APP_STATES.LOADING && (
-            <div className="loading-spinner-container">
-              <div className="loading-spinner"></div>
-            </div>
-          )}
-
-          <div
-            className={`iframe-container ${appState === APP_STATES.CONTENT ? 'visible' : ''}`}
-            onClick={(e) => e.stopPropagation()}
-            style={{ opacity: appState === APP_STATES.CONTENT ? 1 : 0 }}
-          >
-            <button
-              className="close-button"
-              onClick={handleCloseContent}
-              aria-label="Close content"
+      {/* 内容详情覆盖层（内联组件） */}
+      {appState === APP_STATES.CONTENT && getCurrentContent() && (() => {
+        const ContentComponent = getCurrentContent().Component
+        return (
+          <div className="back-view-overlay active" onClick={handleCloseContent}>
+            <div
+              className="iframe-container visible"
+              onClick={(e) => e.stopPropagation()}
             >
-              ✕
-            </button>
-            <iframe
-              ref={iframeRef}
-              src={getCurrentContent().url}
-              title={getCurrentContent().title}
-              className="content-iframe"
-              onLoad={handleLoadSuccess}
-              onError={() => handleLoadError('加载失败')}
-            />
+              <div className="content-scroll-area">
+                <ContentComponent onBack={handleCloseContent} />
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

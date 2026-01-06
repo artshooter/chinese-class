@@ -1,19 +1,17 @@
-'use client'
 import { motion, useAnimation, useSpring, useMotionValue, useTransform } from 'framer-motion'
 import { useEffect, useRef } from 'react'
-import Image from 'next/image'
 import branchImg from './branch.webp'
 
-export default function WillowBranch({ delay = 0, xOffset = 0 }: { delay?: number, xOffset?: number }) {
+export default function WillowBranch({ delay = 0, xOffset = 0 }) {
     const controls = useAnimation()
-    const ref = useRef<HTMLDivElement>(null)
+    const ref = useRef(null)
 
     // Physics-based sway
     const x = useMotionValue(0)
     const rotate = useTransform(x, [-100, 100], [15, -15]) // Move mouse left -> rotate right
     const springX = useSpring(x, { stiffness: 150, damping: 10 })
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e) => {
         if (!ref.current) return
         const rect = ref.current.getBoundingClientRect()
         const centerX = rect.left + rect.width / 2
@@ -64,12 +62,10 @@ export default function WillowBranch({ delay = 0, xOffset = 0 }: { delay?: numbe
             animate={controls} // Breeze animation
         >
             <div className="relative w-full h-full opacity-90">
-                <Image
+                <img
                     src={branchImg}
                     alt="Willow Branch"
-                    fill
-                    className="object-contain object-top drop-shadow-lg"
-                    priority
+                    className="object-contain object-top drop-shadow-lg w-full h-full"
                 />
             </div>
         </motion.div>

@@ -1,8 +1,7 @@
-'use client'
 import { useRef, useEffect } from 'react'
 
 export default function WaveEffect() {
-    const canvasRef = useRef<HTMLCanvasElement>(null)
+    const canvasRef = useRef(null)
 
     useEffect(() => {
         const canvas = canvasRef.current
@@ -26,15 +25,14 @@ export default function WaveEffect() {
         resize()
 
         // Ripple state
-        const ripples: { x: number; y: number; r: number; alpha: number; speed: number }[] = []
+        const ripples = []
 
         // Add ripple on mouse move
-        const handleMouseMove = (e: MouseEvent) => {
+        const handleMouseMove = (e) => {
             if (Math.random() > 0.8) { // Throttle creation
                 ripples.push({
                     x: e.clientX,
-                    y: e.clientY + window.scrollY, // Adjust for scroll if this canvas is fixed/absolute, but if it covers whole page we might want clientY only if fixed.
-                    // Assuming fixed background behavior:
+                    y: e.clientY,
                     r: 1,
                     alpha: 0.5,
                     speed: 1 + Math.random()
@@ -42,33 +40,24 @@ export default function WaveEffect() {
             }
         }
 
-        const handleClick = (e: MouseEvent) => {
+        const handleClick = (e) => {
             // Create a bigger splash
             ripples.push({
                 x: e.clientX,
-                y: e.clientY, // If fixed
+                y: e.clientY,
                 r: 5,
                 alpha: 0.8,
                 speed: 3
             })
         }
 
-        // Since container is likely fixed, we listen to window events
-        // But better to attach to canvas if it overlays everything with pointer-events-none?
-        // If we want it interactive, it shouldn't be pointer-events-none entirely, but might block text selection.
-        // Compromise: Attach to window, canvas is bg.
         window.addEventListener('mousemove', handleMouseMove)
         window.addEventListener('click', handleClick)
 
         // Animation Loop
-        let animationFrameId: number
+        let animationFrameId
         const render = () => {
             ctx.clearRect(0, 0, width, height)
-
-            // Draw gentle background wave (optional simplified sine wave)
-            const time = Date.now() * 0.001
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)'
-            // To be subtle, maybe just use ripples for now to avoid visual noise.
 
             // Update and draw ripples
             for (let i = ripples.length - 1; i >= 0; i--) {

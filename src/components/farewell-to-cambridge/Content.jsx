@@ -1,35 +1,75 @@
-'use client'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { useTranslations } from 'next-intl'
-import { useRef } from 'react'
-import Hero from './Hero'
-import BackButton from '@/app/components/common/BackButton'
-import WaveEffect from './WaveEffect'
-import WillowBranch from './WillowBranch'
-import Image from 'next/image'
+import { useRef, useEffect } from 'react'
+import Hero from './Hero.jsx'
+import WaveEffect from './WaveEffect.jsx'
+import WillowBranch from './WillowBranch.jsx'
 import goldCambridgeImg from './gold-cambridge.webp'
 
-export default function Content() {
-    const t = useTranslations('farewell-to-cambridge')
-    const containerRef = useRef<HTMLDivElement>(null)
+// 诗歌内容直接硬编码
+const VERSES = [
+    [
+        "轻轻的我走了，",
+        "正如我轻轻的来；",
+        "我轻轻的招手，",
+        "作别西天的云彩。"
+    ],
+    [
+        "那河畔的金柳，",
+        "是夕阳中的新娘；",
+        "波光里的艳影，",
+        "在我的心头荡漾。"
+    ],
+    [
+        "软泥上的青荇，",
+        "油油的在水底招摇；",
+        "在康河的柔波里，",
+        "我甘心做一条水草！"
+    ],
+    [
+        "那榆荫下的一潭，",
+        "不是清泉，",
+        "是天上虹；",
+        "揉碎在浮藻间，",
+        "沉淀着彩虹似的梦。"
+    ],
+    [
+        "寻梦？撑一支长篙，",
+        "向青草更青处漫溯；",
+        "满载一船星辉，",
+        "在星辉斑斓里放歌。"
+    ],
+    [
+        "但我不能放歌，",
+        "悄悄是别离的笙箫；",
+        "夏虫也为我沉默，",
+        "沉默是今晚的康桥！"
+    ],
+    [
+        "悄悄的我走了，",
+        "正如我悄悄的来；",
+        "我挥一挥衣袖，",
+        "不带走一片云彩。"
+    ]
+]
+
+export default function Content({ onBack }) {
+    const containerRef = useRef(null)
+    const scrollContainerRef = useRef(null)
+
+    // 在挂载后获取滚动容器
+    useEffect(() => {
+        scrollContainerRef.current = document.querySelector('.content-scroll-area')
+    }, [])
+
     const { scrollYProgress } = useScroll({
         target: containerRef,
+        container: scrollContainerRef,
         offset: ['start start', 'end end'],
     })
 
     // Parallax elements
     const starOpacity = useTransform(scrollYProgress, [0.3, 0.6], [0, 1])
     const willowOpacity = useTransform(scrollYProgress, [0.4, 0.55], [1, 0])
-
-    const verses = [
-        'verse1',
-        'verse2',
-        'verse3',
-        'verse4',
-        'verse5',
-        'verse6',
-        'verse7'
-    ] as const
 
     return (
         <article ref={containerRef} className="relative min-h-[200vh] bg-[#F5F5F5] overflow-hidden">
@@ -49,16 +89,24 @@ export default function Content() {
                 </motion.div>
             </div>
 
-            <BackButton variant="nature" />
+            {/* 返回按钮 */}
+            {onBack && (
+                <button
+                    onClick={onBack}
+                    className="fixed top-6 left-6 z-50 px-4 py-2 bg-white/80 hover:bg-white rounded-full shadow-lg text-[#2C3E50] font-medium transition-colors"
+                >
+                    ← 返回
+                </button>
+            )}
+
             <Hero />
 
 
             <div className="relative z-10 max-w-3xl mx-auto px-6 py-20 md:py-32 space-y-32">
-                {verses.map((verseKey, index) => (
-                    <Section key={verseKey} index={index}>
+                {VERSES.map((verse, index) => (
+                    <Section key={index} index={index}>
                         <div className="text-center space-y-6 cursor-default">
-                            {/* @ts-ignore */}
-                            {t.raw(`content.${verseKey}`).map((line: string, i: number) => (
+                            {verse.map((line, i) => (
                                 <FloatingText
                                     key={i}
                                     className={`text-xl md:text-2xl font-serif leading-loose transition-colors duration-500 ${index >= 3 ? 'text-white/90 drop-shadow-md' : 'text-[#2C3E50]'
@@ -75,11 +123,10 @@ export default function Content() {
                                     transition={{ duration: 1.2 }}
                                     className="relative w-[75vw] h-[40vw] md:h-[500px] left-1/2 -translate-x-1/2 mt-12"
                                 >
-                                    <Image
+                                    <img
                                         src={goldCambridgeImg}
                                         alt="Gold Cambridge"
-                                        fill
-                                        className="object-contain drop-shadow-xl"
+                                        className="object-contain drop-shadow-xl w-full h-full"
                                         style={{
                                             maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 95%)',
                                             WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 95%)'
@@ -161,7 +208,7 @@ export default function Content() {
     )
 }
 
-function Section({ children, index }: { children: React.ReactNode, index: number }) {
+function Section({ children, index }) {
     return (
         <motion.section
             initial={{ opacity: 0, y: 50 }}
@@ -175,7 +222,7 @@ function Section({ children, index }: { children: React.ReactNode, index: number
     )
 }
 
-function FloatingText({ children, className }: { children: React.ReactNode, className: string }) {
+function FloatingText({ children, className }) {
     return (
         <motion.p
             className={className}

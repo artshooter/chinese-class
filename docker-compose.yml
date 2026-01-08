@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  chinese-class-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chinese-class
+    restart: unless-stopped
+    networks:
+      - proxy-network
+
+networks:
+  proxy-network:
+    external: true

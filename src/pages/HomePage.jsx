@@ -75,14 +75,57 @@ const HomePage = () => {
   // === 视觉反馈 ===
   const [isBookHovered, setIsBookHovered] = useState(false)
 
+  // === 图片加载状态 ===
+  const [loadedImages, setLoadedImages] = useState({}) // 记录已加载的图片
+  const [nextPageLoading, setNextPageLoading] = useState(false) // 翻页时下一页图片是否加载中
+
+  // === 渐进式加载状态 ===
+  const [isInitialLoading, setIsInitialLoading] = useState(true) // 全屏 loading
+  const [backgroundLoaded, setBackgroundLoaded] = useState(false) // 背景是否加载完
+  const [bookAssetsLoaded, setBookAssetsLoaded] = useState(false) // book 动画是否加载完
+
   // === Refs ===
   const containerRef = useRef(null)
   const anchorRef = useRef(null)
   const iframeRef = useRef(null)
   const animationTimerRef = useRef(null)
   const loadTimeoutRef = useRef(null)
+  const imageLoadTimeoutRef = useRef({}) // 记录每个图片的加载超时
 
   // ============ Helper Functions ============
+
+  // 预加载图片
+  const preloadImage = (imagePath) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      const timeout = setTimeout(() => {
+        reject(new Error(`Image load timeout: ${imagePath}`))
+      }, 8000) // 8秒超时
+
+      img.onload = () => {
+        clearTimeout(timeout)
+        setLoadedImages(prev => ({ ...prev, [imagePath]: true }))
+        resolve()
+      }
+
+      img.onerror = () => {
+        clearTimeout(timeout)
+        reject(new Error(`Failed to load image: ${imagePath}`))
+      }
+
+      img.src = imagePath
+    })
+  }
+
+  // 获取下一页内容索引
+  const getNextContentIndex = (direction) => {
+    if (direction === 'next') {
+      return (currentContentIndex + 1) % contents.length
+    } else if (direction === 'prev') {
+      return (currentContentIndex - 1 + contents.length) % contents.length
+    }
+    return currentContentIndex
+  }
 
   // 注意：CLOSING 状态不包含在这里，以便允许用户在关闭过程中再次点击打开（打断关闭）
   const isAnimating = appState === APP_STATES.OPENING || appState === APP_STATES.SWITCHING
@@ -119,18 +162,30 @@ const HomePage = () => {
     setAppState(APP_STATES.BOOK)
   }
 
-  const handleSwitchContent = (direction) => {
+  const handleSwitchContent = async (direction) => {
     if (appState !== APP_STATES.BOOK) return
 
-    let nextIndex
-    if (direction === 'next') {
-      nextIndex = (currentContentIndex + 1) % contents.length
-    } else if (direction === 'prev') {
-      nextIndex = (currentContentIndex - 1 + contents.length) % contents.length
-    }
-
+    const nextIndex = getNextContentIndex(direction)
     if (nextIndex === currentContentIndex) return
 
+    // 检查下一页的图片是否已加载
+    const nextContent = contents[nextIndex]
+    const isImageLoaded = loadedImages[nextContent.coverImage]
+
+    if (!isImageLoaded) {
+      // 图片还没加载，先加载
+      setNextPageLoading(true)
+      try {
+        await preloadImage(nextContent.coverImage)
+      } catch (err) {
+        console.warn(`Failed to load next page image:`, err)
+        // 即使加载失败也继续翻页（显示不出来就不出来）
+      } finally {
+        setNextPageLoading(false)
+      }
+    }
+
+    // 开始翻页动画
     setSwitchDirection(direction)
     setAppState(APP_STATES.SWITCHING)
     setFrame(0)
@@ -420,6 +475,106 @@ const HomePage = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [appState, layoutTransform.scale])
 
+  // 渐进式加载：背景 → Book 动画 → 完成
+  useEffect(() => {
+    const progressiveLoad = async () => {
+      try {
+        // 第一步：加载背景
+        await preloadImage('/table.webp')
+        setBackgroundLoaded(true)
+
+        // 第二步：并行加载 book 动画帧和第一个内容封面
+        const bookFrames = [
+          preloadImage('/book-0.webp'),
+          preloadImage('/book-1.webp'),
+          preloadImage('/book-2.webp'),
+          preloadImage('/book-3.webp'),
+          preloadImage('/book-4.webp'),
+          preloadImage(contents[0]?.coverImage) // 第一个内容的封面
+        ]
+        await Promise.all(bookFrames.map(p => p.catch(() => {}))) // 忽略错误
+
+        // 第三步：加载翻页动画帧
+        const flipFrames = [
+          preloadImage('/fanye-0.webp'),
+          preloadImage('/fanye-1.webp'),
+          preloadImage('/fanye-2.webp'),
+          preloadImage('/fanye-3.webp'),
+          preloadImage('/fanye-4.webp')
+        ]
+        await Promise.all(flipFrames.map(p => p.catch(() => {}))) // 忽略错误
+
+        // 所有关键资源加载完成
+        setBookAssetsLoaded(true)
+        setIsInitialLoading(false)
+      } catch (err) {
+        console.error('Progressive loading error:', err)
+        // 即使出错也继续显示页面
+        setBookAssetsLoaded(true)
+        setIsInitialLoading(false)
+      }
+    }
+
+    progressiveLoad()
+  }, [contents])
+
+  // 后台预加载所有内容的大背景图（不阻塞主流程）
+  useEffect(() => {
+    const preloadContentAssets = async () => {
+      try {
+        // 动态导入并预加载每个内容组件的大背景图
+        const assetImports = [
+          import('../components/back-view/back-view.webp').then(m => m.default),
+          import('../components/guxiang/runtu.webp').then(m => m.default),
+          import('../components/guxiang/cha.webp').then(m => m.default),
+          import('../components/farewell-to-cambridge/farewell-to-cambridge.webp').then(m => m.default),
+          import('../components/farewell-to-cambridge/gold-cambridge.webp').then(m => m.default),
+          import('../components/back-view/orange.webp').then(m => m.default),
+          import('../components/farewell-to-cambridge/branch.webp').then(m => m.default)
+        ]
+
+        const imageUrls = await Promise.all(assetImports.map(p => p.catch(() => null)))
+
+        // 预加载所有图片
+        const preloadPromises = imageUrls
+          .filter(url => url)
+          .map(url => preloadImage(url).catch(err => {
+            console.warn(`Failed to preload asset: ${url}`, err)
+          }))
+
+        await Promise.all(preloadPromises)
+        console.log('Content assets preloaded successfully')
+      } catch (err) {
+        console.warn('Error preloading content assets:', err)
+      }
+    }
+
+    // 在 book 动画加载完成后立即开始预加载内容资源
+    if (bookAssetsLoaded) {
+      preloadContentAssets()
+    }
+  }, [bookAssetsLoaded])
+
+  // 后台预加载所有内容的封面图片（不阻塞主流程）
+  useEffect(() => {
+    const preloadAllImages = async () => {
+      const imagePromises = contents.map(content =>
+        preloadImage(content.coverImage).catch(err => {
+          console.warn(`Failed to preload image: ${content.coverImage}`, err)
+          // 失败不中断，继续加载其他图片
+        })
+      )
+      await Promise.all(imagePromises)
+    }
+
+    // 延迟预加载，不打断主要加载流程
+    const timer = setTimeout(() => {
+      preloadAllImages()
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [contents])
+
   // 清理工作 - 组件卸载时
   useEffect(() => {
     return () => {
@@ -429,6 +584,9 @@ const HomePage = () => {
       if (animationTimerRef.current) {
         clearTimeout(animationTimerRef.current)
       }
+      Object.values(imageLoadTimeoutRef.current).forEach(timeout => {
+        clearTimeout(timeout)
+      })
     }
   }, [])
 
@@ -454,122 +612,161 @@ const HomePage = () => {
 
   // ============ 渲染 ============
 
+  // 全屏 loading 覆盖层（初始加载）
+  // 当背景加载完成后，强制隐藏，无论其他资源是否加载完
+  const renderInitialLoading = () => {
+    if (!isInitialLoading || backgroundLoaded) return null
+    return (
+      <div className="loading-overlay">
+        <div className="loading-spinner"></div>
+        <p>加载中...</p>
+      </div>
+    )
+  }
+
+  // 浮动 loading（背景已加载，但 book 动画还未加载完）- 使用底部指示器而非蒙层
+  const renderProgressLoading = () => {
+    if (isInitialLoading || bookAssetsLoaded || !backgroundLoaded) return null
+    return (
+      <div className="page-loading-indicator">
+        <div className="loading-spinner"></div>
+        <span>准备中...</span>
+      </div>
+    )
+  }
+
   return (
     <div className="home-page" ref={containerRef} onClick={handleBackgroundClick}>
-      {/* 背景场景 */}
-      <div className="image-container">
-        <img
-          src="/table.webp"
-          alt="Table"
-          className="table-image"
-        />
+      {/* 全屏 loading（仅在初始加载阶段显示） */}
+      {renderInitialLoading()}
 
-        {/* 书籍容器 - 始终渲染，但在 CONTENT 状态下可能被 overlay 遮挡 */}
-        <div className="book-anchor" ref={anchorRef}>
-          <div
-            className={getBookContainerClasses()}
-            onClick={handleClickBook}
-            onMouseEnter={handleBookMouseEnter}
-            onMouseLeave={handleBookMouseLeave}
-            style={{
-              transform: `translate(${layoutTransform.x}px, ${layoutTransform.y}px) scale(${layoutTransform.scale})`
-            }}
-          >
-            <div
-              className="book-rotator"
-              style={{
-                transform: `perspective(1000px) rotateY(${transform.rotateY}deg) rotateX(${transform.rotateX}deg) rotateZ(${getRotateZ()}deg)`,
-                transition: frame >= 3 ? 'none' : 'transform 0.1s ease-out'
-              }}
-            >
-              {/* 书籍打开/切换动画帧 */}
-              {[0, 1, 2, 3, 4].map((index) => (
-                <img
-                  key={`book-${index}`}
-                  src={`/book-${index}.webp`}
-                  alt={`Book Frame ${index}`}
-                  className={`book-image-layer ${index === frame && appState !== APP_STATES.SWITCHING ? 'visible' : ''}`}
-                />
-              ))}
+      {/* 背景加载完成后显示，但可能有浮动 loading */}
+      {backgroundLoaded && (
+        <>
+          {/* 背景场景 */}
+          <div className="image-container">
+            <img
+              src="/table.webp"
+              alt="Table"
+              className="table-image"
+            />
 
-              {/* 翻页动画帧（SWITCHING 状态） - 预渲染所有帧以避免闪烁 */}
-              {[0, 1, 2, 3, 4].map((index) => (
-                <img
-                  key={`fanye-${index}`}
-                  src={`/fanye-${index}.webp`}
-                  alt={`Flip Frame ${index}`}
-                  className={`flip-animation-layer ${appState === APP_STATES.SWITCHING && frame === index ? 'visible' : ''}`}
-                />
-              ))}
-
-              {/* 书籍背景（内容打开时显示） */}
+            {/* 书籍容器 - 始终渲染，但在 CONTENT 状态下可能被 overlay 遮挡 */}
+            <div className="book-anchor" ref={anchorRef}>
               <div
-                className={`book-content-bg ${shouldShowContent() ? 'visible' : ''}`}
-              />
-
-              {/* 当前内容的封面 */}
-              {getCurrentContent() && (
-                <img
-                  src={getCurrentContent().coverImage}
-                  alt="Book Cover"
-                  className={`book-content-image ${shouldShowContent() ? 'visible' : ''}`}
-                  onClick={handleViewContent}
-                  style={{ cursor: 'pointer' }}
-                />
-              )}
-            </div>
-
-            {/* 只在 BOOK 状态显示导航按钮 */}
-            {appState === APP_STATES.BOOK && contents.length > 1 && (
-              <div className="navigation-buttons">
-                <button
-                  className="nav-button nav-prev transparent-btn"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleSwitchContent('prev')
+                className={getBookContainerClasses()}
+                onClick={handleClickBook}
+                onMouseEnter={handleBookMouseEnter}
+                onMouseLeave={handleBookMouseLeave}
+                style={{
+                  transform: `translate(${layoutTransform.x}px, ${layoutTransform.y}px) scale(${layoutTransform.scale})`
+                }}
+              >
+                <div
+                  className="book-rotator"
+                  style={{
+                    transform: `perspective(1000px) rotateY(${transform.rotateY}deg) rotateX(${transform.rotateX}deg) rotateZ(${getRotateZ()}deg)`,
+                    transition: frame >= 3 ? 'none' : 'transform 0.1s ease-out'
                   }}
-                  aria-label="Previous article"
-                />
-                <button
-                  className="nav-button nav-next transparent-btn"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleSwitchContent('next')
-                  }}
-                  aria-label="Next article"
-                />
+                >
+                  {/* 书籍打开/切换动画帧 */}
+                  {[0, 1, 2, 3, 4].map((index) => (
+                    <img
+                      key={`book-${index}`}
+                      src={`/book-${index}.webp`}
+                      alt={`Book Frame ${index}`}
+                      className={`book-image-layer ${index === frame && appState !== APP_STATES.SWITCHING ? 'visible' : ''}`}
+                    />
+                  ))}
+
+                  {/* 翻页动画帧（SWITCHING 状态） - 预渲染所有帧以避免闪烁 */}
+                  {[0, 1, 2, 3, 4].map((index) => (
+                    <img
+                      key={`fanye-${index}`}
+                      src={`/fanye-${index}.webp`}
+                      alt={`Flip Frame ${index}`}
+                      className={`flip-animation-layer ${appState === APP_STATES.SWITCHING && frame === index ? 'visible' : ''}`}
+                    />
+                  ))}
+
+                  {/* 书籍背景（内容打开时显示） */}
+                  <div
+                    className={`book-content-bg ${shouldShowContent() ? 'visible' : ''}`}
+                  />
+
+                  {/* 当前内容的封面 */}
+                  {getCurrentContent() && (
+                    <img
+                      src={getCurrentContent().coverImage}
+                      alt="Book Cover"
+                      className={`book-content-image ${shouldShowContent() ? 'visible' : ''}`}
+                      onClick={handleViewContent}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  )}
+                </div>
+
+                {/* 只在 BOOK 状态显示导航按钮 */}
+                {appState === APP_STATES.BOOK && contents.length > 1 && (
+                  <div className="navigation-buttons">
+                    <button
+                      className="nav-button nav-prev transparent-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSwitchContent('prev')
+                      }}
+                      aria-label="Previous article"
+                    />
+                    <button
+                      className="nav-button nav-next transparent-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSwitchContent('next')
+                      }}
+                      aria-label="Next article"
+                    />
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* 加载指示器 */}
+          {/* 翻页加载指示器 */}
+          {nextPageLoading && appState === APP_STATES.BOOK && (
+            <div className="page-loading-indicator">
+              <div className="loading-spinner"></div>
+              <span>加载中...</span>
+            </div>
+          )}
 
+          {/* 错误提示 */}
+          {loadError && (
+            <div className="error-toast">
+              {loadError}
+            </div>
+          )}
 
-      {/* 错误提示 */}
-      {loadError && (
-        <div className="error-toast">
-          {loadError}
-        </div>
+          {/* 内容详情覆盖层（内联组件） */}
+          {appState === APP_STATES.CONTENT && getCurrentContent() && (() => {
+            const ContentComponent = getCurrentContent().Component
+            return (
+              <div className="back-view-overlay active" onClick={handleCloseContent}>
+                <div
+                  className="iframe-container visible"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="content-scroll-area">
+                    <ContentComponent onBack={handleCloseContent} />
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* 背景加载中的浮动 loading */}
+          {renderProgressLoading()}
+        </>
       )}
-
-      {/* 内容详情覆盖层（内联组件） */}
-      {appState === APP_STATES.CONTENT && getCurrentContent() && (() => {
-        const ContentComponent = getCurrentContent().Component
-        return (
-          <div className="back-view-overlay active" onClick={handleCloseContent}>
-            <div
-              className="iframe-container visible"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="content-scroll-area">
-                <ContentComponent onBack={handleCloseContent} />
-              </div>
-            </div>
-          </div>
-        )
-      })()}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import BackViewContent from '../components/back-view/Content.jsx'
 import GuxiangContent from '../components/guxiang/Content.jsx'
 import FarewellContent from '../components/farewell-to-cambridge/Content.jsx'
 import PeachBlossomContent from '../components/peach-blossom-spring/index.jsx'
+import ChuShiBiaoContent from '../components/chu-shi-biao/index.jsx'
 
 // ============ 常量定义 ============
 
@@ -59,6 +60,20 @@ const CONTENTS = [
       right: 95,
       radialCenter: '50% 40%',
       radialSize: 60
+    }
+  },
+  {
+    id: 'chu-shi-biao',
+    title: '出师表',
+    coverImage: '/chu-shi-biao.webp',
+    Component: ChuShiBiaoContent,
+    maskConfig: {
+      top: 15,
+      bottom: 85,
+      left: 0,
+      right: 85,
+      radialCenter: '0% 50%',
+      radialSize: 80
     }
   }
   // 可以添加更多内容

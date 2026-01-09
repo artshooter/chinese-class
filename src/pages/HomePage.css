@@ -127,6 +127,19 @@
   /* Fade in with delay */
 }
 
+/* 自定义模糊效果（当配置了 maskConfig 时使用） */
+.book-content-image.custom-mask {
+  /* CSS 变量控制的四方向模糊 */
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent, black var(--mask-top), black var(--mask-bottom), transparent),
+    linear-gradient(to right, transparent, black var(--mask-left), black var(--mask-right), transparent),
+    radial-gradient(ellipse at var(--mask-radial-center), black var(--mask-radial-size), transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, transparent, black var(--mask-top), black var(--mask-bottom), transparent),
+    linear-gradient(to right, transparent, black var(--mask-left), black var(--mask-right), transparent),
+    radial-gradient(ellipse at var(--mask-radial-center), black var(--mask-radial-size), transparent 100%);
+}
+
 
 
 .back-view-overlay {
@@ -180,6 +193,13 @@
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  /* 隐藏滚动条但保留滚动功能 */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Chrome/Safari/Edge 隐藏滚动条 */
+.content-scroll-area::-webkit-scrollbar {
+  display: none;
 }
 
 /* ============ 新增样式 - 状态机支持 ============ */

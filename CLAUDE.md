@@ -13,8 +13,22 @@
 
 - **前端框架**：React 19
 - **构建工具**：Vite 7
-- **动画**：CSS transforms
-- **样式**：原生 CSS
+- **动画**：Framer Motion + CSS transforms
+- **样式**：Tailwind CSS v4
+
+## 相关文档
+
+- [docs/DESIGN_GUIDE.md](docs/DESIGN_GUIDE.md) - 设计规范与创意来源
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - 技术架构与编码规范
+
+## 添加新课文
+
+使用以下 skill 快速添加新课文：
+
+1. **准备内容**：在 `src/components/[article-name]/` 目录下放入 `content.md`
+2. **生成设计文档**：使用 `/generate-design [article-name]`
+3. **生成组件代码**：使用 `/generate-webpage [article-name]`
+4. **替换封面图**：手动替换 `public/[article-name].webp`
 
 ## 开发命令
 

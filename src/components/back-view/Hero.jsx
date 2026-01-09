@@ -1,11 +1,9 @@
 import { motion } from 'framer-motion'
 import backViewImg from './back-view.webp'
 
-export default function Hero({ inHome = false }) {
-    const content = (
-        <div
-            className={`relative w-full ${inHome ? 'h-[400px]' : 'h-auto'} bg-gradient-to-b from-[#1a1a1a] to-[#2d2d2d] overflow-hidden ${inHome ? 'cursor-pointer group' : ''}`}
-        >
+export default function Hero() {
+    return (
+        <div className="relative w-full h-auto bg-gradient-to-b from-[#1a1a1a] to-[#2d2d2d] overflow-hidden">
             {/* 背景纹理 */}
             <div className="absolute inset-0 opacity-10">
                 <div className="w-full h-full" style={{
@@ -13,27 +11,22 @@ export default function Hero({ inHome = false }) {
                 }} />
             </div>
 
-            {/* 背景图片 - 全屏铺开 */}
+            {/* 背景图片 - 渐入动画 */}
             <motion.div
-                className={inHome ? "absolute inset-0 z-0" : "relative z-0 w-full h-auto"}
-                initial={inHome ? false : { scale: 1.15 }}
-                animate={inHome ? false : { scale: 1 }}
-                transition={inHome ? undefined : { duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
+                className="relative z-0 w-full h-auto"
+                initial={{ scale: 1.15 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 1.5, ease: [0.25, 0.1, 0.25, 1] }}
             >
                 <img
                     src={backViewImg}
                     alt="Father's Back View"
-                    className="object-cover w-full h-full"
-                    style={!inHome ? { width: '100%', height: 'auto' } : { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    className="w-full h-auto"
                 />
             </motion.div>
 
-            {/* 底部渐变过渡 - 仅详情页 */}
-            {!inHome && (
-                <div className="absolute bottom-0 left-0 right-0 h-32 z-10 bg-gradient-to-b from-transparent to-[#F5F5DC]" />
-            )}
+            {/* 底部渐变过渡 */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 z-10 bg-gradient-to-b from-transparent to-[#F5F5DC]" />
         </div>
     )
-
-    return content
 }

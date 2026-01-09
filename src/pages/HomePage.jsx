@@ -5,6 +5,7 @@ import './HomePage.css'
 import BackViewContent from '../components/back-view/Content.jsx'
 import GuxiangContent from '../components/guxiang/Content.jsx'
 import FarewellContent from '../components/farewell-to-cambridge/Content.jsx'
+import PeachBlossomContent from '../components/peach-blossom-spring/index.jsx'
 
 // ============ 常量定义 ============
 
@@ -45,6 +46,20 @@ const CONTENTS = [
     title: '再别康桥',
     coverImage: '/farewell-to-cambridge.webp',
     Component: FarewellContent
+  },
+  {
+    id: 'peach-blossom-spring',
+    title: '桃花源记',
+    coverImage: '/peach-blossom-spring.webp',
+    Component: PeachBlossomContent,
+    maskConfig: {
+      top: 0,
+      bottom: 100,
+      left: 5,
+      right: 95,
+      radialCenter: '50% 40%',
+      radialSize: 60
+    }
   }
   // 可以添加更多内容
 ]
@@ -131,6 +146,22 @@ const HomePage = () => {
   const isAnimating = appState === APP_STATES.OPENING || appState === APP_STATES.SWITCHING
 
   const getCurrentContent = () => contents[currentContentIndex] || null
+
+  // 获取当前内容的 mask 样式（如果有配置）
+  const getMaskStyle = () => {
+    const content = getCurrentContent()
+    if (!content?.maskConfig) return {} // 未配置时返回空对象，使用 CSS 默认值
+
+    const config = content.maskConfig
+    return {
+      '--mask-top': `${config.top}%`,
+      '--mask-bottom': `${config.bottom}%`,
+      '--mask-left': `${config.left}%`,
+      '--mask-right': `${config.right}%`,
+      '--mask-radial-center': config.radialCenter,
+      '--mask-radial-size': `${config.radialSize}%`
+    }
+  }
 
   const shouldShowContent = () => {
     // 在 frame 4 时显示内容，此时旋转已归零
@@ -492,7 +523,7 @@ const HomePage = () => {
           preloadImage('/book-4.webp'),
           preloadImage(contents[0]?.coverImage) // 第一个内容的封面
         ]
-        await Promise.all(bookFrames.map(p => p.catch(() => {}))) // 忽略错误
+        await Promise.all(bookFrames.map(p => p.catch(() => { }))) // 忽略错误
 
         // 第三步：加载翻页动画帧
         const flipFrames = [
@@ -502,7 +533,7 @@ const HomePage = () => {
           preloadImage('/fanye-3.webp'),
           preloadImage('/fanye-4.webp')
         ]
-        await Promise.all(flipFrames.map(p => p.catch(() => {}))) // 忽略错误
+        await Promise.all(flipFrames.map(p => p.catch(() => { }))) // 忽略错误
 
         // 所有关键资源加载完成
         setBookAssetsLoaded(true)
@@ -695,15 +726,21 @@ const HomePage = () => {
                   />
 
                   {/* 当前内容的封面 */}
-                  {getCurrentContent() && (
-                    <img
-                      src={getCurrentContent().coverImage}
-                      alt="Book Cover"
-                      className={`book-content-image ${shouldShowContent() ? 'visible' : ''}`}
-                      onClick={handleViewContent}
-                      style={{ cursor: 'pointer' }}
-                    />
-                  )}
+                  {getCurrentContent() && (() => {
+                    const content = getCurrentContent()
+                    const maskStyle = getMaskStyle()
+                    const hasCustomMask = content?.maskConfig !== undefined
+
+                    return (
+                      <img
+                        src={content.coverImage}
+                        alt="Book Cover"
+                        className={`book-content-image ${shouldShowContent() ? 'visible' : ''} ${hasCustomMask ? 'custom-mask' : ''}`}
+                        onClick={handleViewContent}
+                        style={{ cursor: 'pointer', ...maskStyle }}
+                      />
+                    )
+                  })()}
                 </div>
 
                 {/* 只在 BOOK 状态显示导航按钮 */}

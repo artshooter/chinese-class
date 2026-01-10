@@ -149,7 +149,7 @@ const CONTENTS = [
 - **格式**：webp
 - **位置**：`public/[article-name].webp`
 - **命名**：与 article-name 一致
-- **开发时**：可使用纯白占位图，后续替换
+- **开发时**：可复制现有封面图（如 `back-view.webp`）作为占位，后续替换
 
 ---
 

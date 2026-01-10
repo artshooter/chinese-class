@@ -7,6 +7,7 @@ import GuxiangContent from '../components/guxiang/Content.jsx'
 import FarewellContent from '../components/farewell-to-cambridge/Content.jsx'
 import PeachBlossomContent from '../components/peach-blossom-spring/index.jsx'
 import ChuShiBiaoContent from '../components/chu-shi-biao/index.jsx'
+import FacingTheSeaContent from '../components/facing-the-sea/Content.jsx'
 
 // ============ 常量定义 ============
 
@@ -74,6 +75,20 @@ const CONTENTS = [
       right: 85,
       radialCenter: '0% 50%',
       radialSize: 80
+    }
+  },
+  {
+    id: 'facing-the-sea',
+    title: '面朝大海，春暖花开',
+    coverImage: '/facing-the-sea.webp',
+    Component: FacingTheSeaContent,
+    maskConfig: {
+      top: 0,
+      bottom: 100,
+      left: 0,
+      right: 100,
+      radialCenter: '50% 50%',
+      radialSize: 100
     }
   }
   // 可以添加更多内容

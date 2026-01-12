@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import fishManSeeImg from './fish-man-see.webp'
 import fishManTalkImg from './fish-man-talk.webp'
 

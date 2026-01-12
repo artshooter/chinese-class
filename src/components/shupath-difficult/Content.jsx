@@ -7,13 +7,13 @@ import shupathBg from './shupath.webp'
 import carouselLeft from './left.webp'
 import carouselRight from './right.webp'
 
-export default function Content({ onBack }) {
+export default function Content({ onBack, scrollContainerRef }) {
     const containerRef = useRef(null)
     const sectionRef = useRef(null)
 
     // 监听第一段正文位置，用于透明度
     const { scrollYProgress: sectionProgress } = useScroll({
-        container: containerRef,
+        container: scrollContainerRef,
         target: sectionRef,
         layoutEffect: false,
         offset: ["start end", "end center"]
@@ -21,7 +21,7 @@ export default function Content({ onBack }) {
 
     // 监听整个容器的滚动，用于轮播图
     const { scrollYProgress: containerProgress } = useScroll({
-        container: containerRef,
+        container: scrollContainerRef,
         layoutEffect: false
     })
 
@@ -56,23 +56,8 @@ export default function Content({ onBack }) {
     return (
         <div
             ref={containerRef}
-            className="h-screen bg-[#FDF5E6] text-[#2F4F4F] font-serif relative overflow-y-scroll overflow-x-hidden"
-            style={{
-                scrollbarWidth: 'none', /* Firefox */
-                msOverflowStyle: 'none', /* IE/Edge */
-            }}
+            className="min-h-screen bg-[#FDF5E6] text-[#2F4F4F] font-serif relative"
         >
-            <style>{`
-                html, body {
-                    overflow: hidden;
-                    height: 100%;
-                    margin: 0;
-                    padding: 0;
-                }
-                div::-webkit-scrollbar {
-                    display: none;
-                }
-            `}</style>
 
             {/* 左侧装饰图 - 仅在桌面端显示 */}
             <motion.div

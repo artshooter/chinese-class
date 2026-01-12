@@ -148,6 +148,7 @@ const HomePage = () => {
   const containerRef = useRef(null)
   const anchorRef = useRef(null)
   const iframeRef = useRef(null)
+  const scrollAreaRef = useRef(null) // 滚动容器引用，传递给文章组件
   const animationTimerRef = useRef(null)
   const loadTimeoutRef = useRef(null)
   const imageLoadTimeoutRef = useRef({}) // 记录每个图片的加载超时
@@ -837,8 +838,8 @@ const HomePage = () => {
                   className="iframe-container visible"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="content-scroll-area">
-                    <ContentComponent onBack={handleCloseContent} />
+                  <div className="content-scroll-area" ref={scrollAreaRef}>
+                    <ContentComponent onBack={handleCloseContent} scrollContainerRef={scrollAreaRef} />
                   </div>
                 </div>
               </div>

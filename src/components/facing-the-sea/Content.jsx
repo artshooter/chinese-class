@@ -9,14 +9,18 @@ export default function Content({ onBack }) {
             {onBack && (
                 <motion.button
                     onClick={onBack}
-                    className="fixed top-6 left-6 z-50 px-3 py-2 
-                        text-[#2F4F4F]/60 hover:text-[#2F4F4F]
+                    className="fixed top-6 left-6 z-50 px-4 py-2 
+                        bg-[#FDFEFE]/80 backdrop-blur-sm
+                        border border-[#2F4F4F]/10
+                        rounded-full shadow-sm
+                        text-[#2F4F4F]/80 hover:text-[#2F4F4F] hover:bg-[#FDFEFE]
                         font-serif text-sm tracking-wide
-                        transition-colors duration-300"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                        cursor-pointer
+                        transition-all duration-300"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.5, duration: 0.6 }}
-                    whileHover={{ x: -3 }}
+                    whileHover={{ x: -2 }}
                     whileTap={{ scale: 0.95 }}
                 >
                     ← 返回

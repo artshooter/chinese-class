@@ -195,13 +195,21 @@ export default function Content({ onBack }) {
                 {onBack && (
                     <motion.button
                         onClick={onBack}
-                        className="fixed top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 bg-[#1e293b]/80 hover:bg-[#334155] rounded-lg text-[#f3f4f6] text-sm transition-colors backdrop-blur-sm border border-[#334155]"
+                        className="fixed top-6 left-6 z-50 px-4 py-2 
+                            bg-[#1e293b]/80 backdrop-blur-sm
+                            border border-[#334155]
+                            rounded-full shadow-lg
+                            text-[#f3f4f6]/80 hover:text-[#f3f4f6] hover:bg-[#1e293b]
+                            text-sm tracking-wide
+                            cursor-pointer
+                            transition-all duration-300"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 }}
+                        transition={{ delay: 0.5, duration: 0.6 }}
+                        whileHover={{ x: -2 }}
+                        whileTap={{ scale: 0.95 }}
                     >
-                        <span>←</span>
-                        <span>返回</span>
+                        ← 返回
                     </motion.button>
                 )}
 

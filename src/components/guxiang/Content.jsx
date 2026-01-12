@@ -9,12 +9,24 @@ export default function Content({ onBack }) {
 
             {/* 返回按钮 */}
             {onBack && (
-                <button
+                <motion.button
                     onClick={onBack}
-                    className="fixed top-6 left-6 z-50 px-4 py-2 bg-white/80 hover:bg-white rounded-full shadow-lg text-[#2d3336] font-medium transition-colors"
+                    className="fixed top-6 left-6 z-50 px-4 py-2 
+                        bg-white/80 backdrop-blur-sm
+                        border border-[#2d3336]/10
+                        rounded-full shadow-sm
+                        text-[#2d3336]/80 hover:text-[#2d3336] hover:bg-white
+                        font-serif text-sm tracking-wide
+                        cursor-pointer
+                        transition-all duration-300"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5, duration: 0.6 }}
+                    whileHover={{ x: -2 }}
+                    whileTap={{ scale: 0.95 }}
                 >
                     ← 返回
-                </button>
+                </motion.button>
             )}
 
             {/* Hero: The Dream */}

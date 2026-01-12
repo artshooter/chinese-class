@@ -8,6 +8,7 @@ import FarewellContent from '../components/farewell-to-cambridge/Content.jsx'
 import PeachBlossomContent from '../components/peach-blossom-spring/index.jsx'
 import ChuShiBiaoContent from '../components/chu-shi-biao/index.jsx'
 import FacingTheSeaContent from '../components/facing-the-sea/Content.jsx'
+import ShupathDifficultContent from '../components/shupath-difficult/Content.jsx'
 
 // ============ 常量定义 ============
 
@@ -82,6 +83,20 @@ const CONTENTS = [
     title: '面朝大海，春暖花开',
     coverImage: '/facing-the-sea.webp',
     Component: FacingTheSeaContent,
+    maskConfig: {
+      top: 0,
+      bottom: 100,
+      left: 0,
+      right: 100,
+      radialCenter: '50% 50%',
+      radialSize: 100
+    }
+  },
+  {
+    id: 'shupath-difficult',
+    title: '蜀道难',
+    coverImage: '/shupath-difficult.webp',
+    Component: ShupathDifficultContent,
     maskConfig: {
       top: 0,
       bottom: 100,

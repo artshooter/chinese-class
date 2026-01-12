@@ -16,13 +16,25 @@ export default function Content({ onBack }) {
             <div className="peach-content min-h-screen bg-transparent text-[#2F4F4F] font-serif overflow-x-hidden">
                 {/* 返回按钮 */}
                 {onBack && (
-                    <button
+                    <motion.button
                         onClick={onBack}
-                        className="fixed top-8 left-8 z-50 flex flex-col items-center gap-1 text-[#6B7280] hover:text-[#374151] transition-colors cursor-pointer"
+                        className="fixed top-6 left-6 z-50 px-4 py-2 
+                            bg-white/80 backdrop-blur-sm
+                            border border-[#2F4F4F]/10
+                            rounded-full shadow-sm
+                            text-[#2F4F4F]/80 hover:text-[#2F4F4F] hover:bg-white
+                            font-serif text-sm tracking-wide
+                            cursor-pointer
+                            transition-all duration-300"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5, duration: 0.6 }}
+                        whileHover={{ x: -2 }}
+                        whileTap={{ scale: 0.95 }}
+                        title="返回"
                     >
-                        <span className="text-lg mb-1">←</span>
-                        <span className="text-sm tracking-[0.3em] font-light" style={{ writingMode: 'vertical-rl' }}>返回</span>
-                    </button>
+                        ← 返回
+                    </motion.button>
                 )}
 
                 {/* 第一段：缘溪行至洞口 */}

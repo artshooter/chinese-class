@@ -15,12 +15,14 @@ export default function Content({ onBack }) {
     const { scrollYProgress: sectionProgress } = useScroll({
         container: containerRef,
         target: sectionRef,
+        layoutEffect: false,
         offset: ["start end", "end center"]
     })
 
     // 监听整个容器的滚动，用于轮播图
     const { scrollYProgress: containerProgress } = useScroll({
-        container: containerRef
+        container: containerRef,
+        layoutEffect: false
     })
 
     const opacity = useTransform(sectionProgress, [0.4, 1], [0, 1])
@@ -29,23 +31,53 @@ export default function Content({ onBack }) {
     const carouselImages = [carouselLeft, carouselRight]
     const [carouselIndex, setCarouselIndex] = useState(0)
 
+    // 轮播图位置：从底部向上移动（小幅度）
+    const carouselY = useTransform(containerProgress, [0, 1], ['20%', '-13%'])
+    const carouselX = useTransform(containerProgress, [0, 0.6, 1], ['0%', '18%', '4%'])
+
+    // 轮播图缩放：随滚动逐渐变小（人物走远）
+    const carouselScale = useTransform(containerProgress, [0, 1], [1.4, 0.3])
+    const lastIndex = useRef(0)
+
     useMotionValueEvent(containerProgress, "change", (latest) => {
+        console.log("Container Progress:", latest)
         // 将滚动进度映射到 0-1 索引，乘数越大切换越快
-        const index = Math.floor(latest * 8) % 2
-        setCarouselIndex(index)
+        const next = Math.floor(latest * 12) % 2
+        if (next !== lastIndex.current) {
+            lastIndex.current = next
+            setCarouselIndex(next)
+        }
+    })
+
+    useMotionValueEvent(sectionProgress, "change", (latest) => {
+        console.log("Section Progress:", latest, "Opacity:", opacity.get())
     })
 
     return (
         <div
             ref={containerRef}
-            className="min-h-screen bg-[#FDF5E6] text-[#2F4F4F] font-serif relative overflow-y-auto overflow-x-hidden"
-            style={{ height: '100vh' }}
+            className="h-screen bg-[#FDF5E6] text-[#2F4F4F] font-serif relative overflow-y-scroll overflow-x-hidden"
+            style={{
+                scrollbarWidth: 'none', /* Firefox */
+                msOverflowStyle: 'none', /* IE/Edge */
+            }}
         >
+            <style>{`
+                html, body {
+                    overflow: hidden;
+                    height: 100%;
+                    margin: 0;
+                    padding: 0;
+                }
+                div::-webkit-scrollbar {
+                    display: none;
+                }
+            `}</style>
 
             {/* 左侧装饰图 - 仅在桌面端显示 */}
             <motion.div
                 style={{ opacity }}
-                className="fixed inset-y-0 left-0 w-1/3 z-5 pointer-events-none hidden lg:flex items-center justify-center overflow-hidden px-12"
+                className="fixed inset-y-0 left-0 w-1/3 z-20 pointer-events-none hidden lg:flex items-center justify-center overflow-hidden px-12"
             >
                 <div className="relative h-[85%] w-auto overflow-hidden rounded-lg">
                     {/* 主图 */}
@@ -58,12 +90,15 @@ export default function Content({ onBack }) {
                             WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 95%)'
                         }}
                     />
-                    {/* 轮播图叠加在主图上 */}
-                    <img
+                    {/* 轮播图叠加在主图上，随滚动从底部向上移动并缩小 */}
+                    <motion.img
                         src={carouselImages[carouselIndex]}
                         alt={`carousel ${carouselIndex}`}
                         className="absolute inset-0 h-full w-full object-contain"
                         style={{
+                            translateY: carouselY,
+                            translateX: carouselX,
+                            scale: carouselScale,
                             maskImage: 'radial-gradient(ellipse at center, black 50%, transparent 95%)',
                             WebkitMaskImage: 'radial-gradient(ellipse at center, black 50%, transparent 95%)'
                         }}
@@ -99,8 +134,11 @@ export default function Content({ onBack }) {
                 {/* Hero: 蜀山之门 */}
                 <Hero />
 
+                {/* 顶部间距 - 放在 article 外部避免 space-y 影响 */}
+                <div className="h-12 md:h-20" aria-hidden="true" />
+
                 {/* 主内容区 */}
-                <article className="max-w-3xl mx-auto px-6 py-20 md:py-32 space-y-24">
+                <article className="max-w-3xl mx-auto px-6 pb-8 space-y-32">
 
                     {/* 第一段 */}
                     <div ref={sectionRef}>
@@ -146,8 +184,6 @@ export default function Content({ onBack }) {
                     </Section>
 
                 </article>
-
-                <div className="h-32 bg-gradient-to-b from-[#FDF5E6] to-[#F5E6D3]" />
 
             </div>
         </div>

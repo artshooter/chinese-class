@@ -31,24 +31,34 @@ const ANIMATION_CONFIG = {
   ERROR_DISPLAY_DURATION: 3000
 }
 
+// 动画帧配置
+const FRAME_CONFIG = {
+  BOOK: {
+    TOTAL_FRAMES: 6,        // book-0 到 book-5，共 6 帧
+    FINAL_FRAME: 5,         // 最后一帧索引
+    FIRST_FRAME: 0          // 第一帧索引
+  },
+  FLIP: {
+    TOTAL_FRAMES: 5,        // fanye-0 到 fanye-4，共 5 帧
+    FINAL_FRAME: 4,         // 最后一帧索引
+    FIRST_FRAME: 0          // 第一帧索引
+  }
+}
+
 const CONTENTS = [
   {
-    id: 'article1',
-    title: '背影',
-    coverImage: '/back-view.webp',
-    Component: BackViewContent
-  },
-  {
-    id: 'article2',
-    title: '故乡',
-    coverImage: '/rentu.webp',
-    Component: GuxiangContent
-  },
-  {
-    id: 'article3',
-    title: '再别康桥',
-    coverImage: '/farewell-to-cambridge.webp',
-    Component: FarewellContent
+    id: 'facing-the-sea',
+    title: '面朝大海，春暖花开',
+    coverImage: '/facing-the-sea.webp',
+    Component: FacingTheSeaContent,
+    maskConfig: {
+      top: 5,
+      bottom: 85,
+      left: 15,
+      right: 85,
+      radialCenter: '50% 50%',
+      radialSize: 100
+    }
   },
   {
     id: 'peach-blossom-spring',
@@ -79,20 +89,6 @@ const CONTENTS = [
     }
   },
   {
-    id: 'facing-the-sea',
-    title: '面朝大海，春暖花开',
-    coverImage: '/facing-the-sea.webp',
-    Component: FacingTheSeaContent,
-    maskConfig: {
-      top: 0,
-      bottom: 100,
-      left: 0,
-      right: 100,
-      radialCenter: '50% 50%',
-      radialSize: 100
-    }
-  },
-  {
     id: 'shupath-difficult',
     title: '蜀道难',
     coverImage: '/shupath-difficult.webp',
@@ -105,8 +101,25 @@ const CONTENTS = [
       radialCenter: '50% 50%',
       radialSize: 100
     }
+  },
+  {
+    id: 'article1',
+    title: '背影',
+    coverImage: '/back-view.webp',
+    Component: BackViewContent
+  },
+  {
+    id: 'article2',
+    title: '故乡',
+    coverImage: '/rentu.webp',
+    Component: GuxiangContent
+  },
+  {
+    id: 'article3',
+    title: '再别康桥',
+    coverImage: '/farewell-to-cambridge.webp',
+    Component: FarewellContent
   }
-  // 可以添加更多内容
 ]
 
 // ============ HomePage 组件 ============
@@ -116,7 +129,8 @@ const HomePage = () => {
   const [appState, setAppState] = useState(APP_STATES.INITIAL)
 
   // === 内容管理 ===
-  const [currentContentIndex, setCurrentContentIndex] = useState(0)
+  const [currentContentIndex, setCurrentContentIndex] = useState(0)  // 书本双页的位置
+  const [viewingContentIndex, setViewingContentIndex] = useState(0)  // 正在查看的内容
   const [contents] = useState(CONTENTS)
 
   // === 动画控制 ===
@@ -134,6 +148,7 @@ const HomePage = () => {
 
   // === 视觉反馈 ===
   const [isBookHovered, setIsBookHovered] = useState(false)
+  const [keyboardPressedButton, setKeyboardPressedButton] = useState(null) // 'prev' | 'next' | null
 
   // === 图片加载状态 ===
   const [loadedImages, setLoadedImages] = useState({}) // 记录已加载的图片
@@ -178,12 +193,13 @@ const HomePage = () => {
     })
   }
 
-  // 获取下一页内容索引
+  // 获取下一页内容索引（每次跳 2 个）
   const getNextContentIndex = (direction) => {
+    const step = 2  // 每次翻页跳 2 个内容
     if (direction === 'next') {
-      return (currentContentIndex + 1) % contents.length
+      return (currentContentIndex + step) % contents.length
     } else if (direction === 'prev') {
-      return (currentContentIndex - 1 + contents.length) % contents.length
+      return (currentContentIndex - step + contents.length) % contents.length
     }
     return currentContentIndex
   }
@@ -192,6 +208,7 @@ const HomePage = () => {
   const isAnimating = appState === APP_STATES.OPENING || appState === APP_STATES.SWITCHING
 
   const getCurrentContent = () => contents[currentContentIndex] || null
+  const getViewingContent = () => contents[viewingContentIndex] || null
 
   // 获取当前内容的 mask 样式（如果有配置）
   const getMaskStyle = () => {
@@ -210,15 +227,8 @@ const HomePage = () => {
   }
 
   const shouldShowContent = () => {
-    // 在 frame 4 时显示内容，此时旋转已归零
-    return (appState === APP_STATES.BOOK || appState === APP_STATES.LOADING || appState === APP_STATES.OPENING) && frame >= 4
-  }
-
-  const getRotateZ = () => {
-    // 翻页动画不需要 Z 轴旋转（开书动画的 Z 轴逻辑会干扰翻页）
-    if (appState === APP_STATES.SWITCHING) return 0
-    if (frame === 4) return 0
-    return (frame / 3) * 15
+    // 在最后一帧时显示内容
+    return (appState === APP_STATES.BOOK || appState === APP_STATES.LOADING || appState === APP_STATES.OPENING) && frame >= FRAME_CONFIG.BOOK.FINAL_FRAME
   }
 
   // ============ 事件处理器 - 状态转换 ============
@@ -271,25 +281,31 @@ const HomePage = () => {
   const handleSwitchingComplete = () => {
     if (appState !== APP_STATES.SWITCHING) return
 
+    const step = 2  // 每次翻页跳 2 个内容
     let nextIndex
     if (switchDirection === 'next') {
-      nextIndex = (currentContentIndex + 1) % contents.length
+      nextIndex = (currentContentIndex + step) % contents.length
     } else if (switchDirection === 'prev') {
-      nextIndex = (currentContentIndex - 1 + contents.length) % contents.length
+      nextIndex = (currentContentIndex - step + contents.length) % contents.length
     }
 
     setCurrentContentIndex(nextIndex)
     setAppState(APP_STATES.BOOK)
-    setFrame(4)
+    setFrame(FRAME_CONFIG.BOOK.FINAL_FRAME)
     setSwitchDirection(null)
   }
 
-  const handleViewContent = (e) => {
+  const handleViewContent = (e, contentIndex) => {
     if (e && e.stopPropagation) {
       e.stopPropagation()
     }
 
     if (appState !== APP_STATES.BOOK) return
+
+    // 设置要查看的内容索引（不改变书本双页位置）
+    if (contentIndex !== undefined) {
+      setViewingContentIndex(contentIndex)
+    }
 
     // 内联组件直接切换到CONTENT状态，无需加载过程
     setAppState(APP_STATES.CONTENT)
@@ -377,7 +393,7 @@ const HomePage = () => {
     if (!anchorRef.current) return
 
     const rect = anchorRef.current.getBoundingClientRect()
-    const targetHeight = window.innerHeight * 0.9
+    const targetHeight = window.innerHeight * 0.98
     const targetScale = targetHeight / rect.height
 
     const targetX = window.innerWidth / 2
@@ -408,7 +424,7 @@ const HomePage = () => {
       currentFrame++
       setFrame(currentFrame)
 
-      if (currentFrame >= 4) {
+      if (currentFrame >= FRAME_CONFIG.BOOK.FINAL_FRAME) {
         clearInterval(timer)
         handleOpeningComplete()
       }
@@ -422,7 +438,7 @@ const HomePage = () => {
     if (appState !== APP_STATES.CLOSING) return
 
     const frameInterval = ANIMATION_CONFIG.OPENING_FRAME_INTERVAL
-    let currentFrame = 4
+    let currentFrame = FRAME_CONFIG.BOOK.FINAL_FRAME
 
     const timer = setInterval(() => {
       currentFrame--
@@ -443,11 +459,11 @@ const HomePage = () => {
     if (appState !== APP_STATES.SWITCHING) return
 
     const frameInterval = 100 // Speed updated to 80ms by user request
-    const totalFrames = 5 // 0, 1, 2, 3, 4
+    const totalFrames = FRAME_CONFIG.FLIP.TOTAL_FRAMES
 
     // Initial frame depends on direction
-    // If next: start at 0, go to 4
-    // If prev: start at 4, go to 0
+    // If next: start at 0, go to FINAL_FRAME
+    // If prev: start at FINAL_FRAME, go to 0
     let currentFlipIndex = switchDirection === 'next' ? 0 : totalFrames - 1
 
     // Set initial frame immediately
@@ -503,9 +519,13 @@ const HomePage = () => {
       if (appState === APP_STATES.BOOK) {
         if (e.key === 'ArrowLeft') {
           e.preventDefault()
+          setKeyboardPressedButton('prev')
+          setTimeout(() => setKeyboardPressedButton(null), 150)
           handleSwitchContent('prev')
         } else if (e.key === 'ArrowRight') {
           e.preventDefault()
+          setKeyboardPressedButton('next')
+          setTimeout(() => setKeyboardPressedButton(null), 150)
           handleSwitchContent('next')
         } else if (e.key === 'Enter') {
           e.preventDefault()
@@ -533,7 +553,7 @@ const HomePage = () => {
         // 如果书籍已展开，重新计算位置
         if (!anchorRef.current) return
         const rect = anchorRef.current.getBoundingClientRect()
-        const targetHeight = window.innerHeight * 0.9
+        const targetHeight = window.innerHeight * 0.98
         const scale = targetHeight / rect.height
 
         const targetX = window.innerWidth / 2
@@ -562,23 +582,17 @@ const HomePage = () => {
 
         // 第二步：并行加载 book 动画帧和第一个内容封面
         const bookFrames = [
-          preloadImage('/book-0.webp'),
-          preloadImage('/book-1.webp'),
-          preloadImage('/book-2.webp'),
-          preloadImage('/book-3.webp'),
-          preloadImage('/book-4.webp'),
+          ...Array.from({ length: FRAME_CONFIG.BOOK.TOTAL_FRAMES }, (_, i) =>
+            preloadImage(`/book-${i}.webp`)
+          ),
           preloadImage(contents[0]?.coverImage) // 第一个内容的封面
         ]
         await Promise.all(bookFrames.map(p => p.catch(() => { }))) // 忽略错误
 
         // 第三步：加载翻页动画帧
-        const flipFrames = [
-          preloadImage('/fanye-0.webp'),
-          preloadImage('/fanye-1.webp'),
-          preloadImage('/fanye-2.webp'),
-          preloadImage('/fanye-3.webp'),
-          preloadImage('/fanye-4.webp')
-        ]
+        const flipFrames = Array.from({ length: FRAME_CONFIG.FLIP.TOTAL_FRAMES }, (_, i) =>
+          preloadImage(`/fanye-${i}.webp`)
+        )
         await Promise.all(flipFrames.map(p => p.catch(() => { }))) // 忽略错误
 
         // 所有关键资源加载完成
@@ -742,12 +756,12 @@ const HomePage = () => {
                 <div
                   className="book-rotator"
                   style={{
-                    transform: `perspective(1000px) rotateY(${transform.rotateY}deg) rotateX(${transform.rotateX}deg) rotateZ(${getRotateZ()}deg)`,
-                    transition: frame >= 3 ? 'none' : 'transform 0.1s ease-out'
+                    transform: `perspective(1000px) rotateY(${transform.rotateY}deg) rotateX(${transform.rotateX}deg)`,
+                    transition: 'transform 0.1s ease-out'
                   }}
                 >
                   {/* 书籍打开/切换动画帧 */}
-                  {[0, 1, 2, 3, 4].map((index) => (
+                  {Array.from({ length: FRAME_CONFIG.BOOK.TOTAL_FRAMES }, (_, index) => index).map((index) => (
                     <img
                       key={`book-${index}`}
                       src={`/book-${index}.webp`}
@@ -757,7 +771,7 @@ const HomePage = () => {
                   ))}
 
                   {/* 翻页动画帧（SWITCHING 状态） - 预渲染所有帧以避免闪烁 */}
-                  {[0, 1, 2, 3, 4].map((index) => (
+                  {Array.from({ length: FRAME_CONFIG.FLIP.TOTAL_FRAMES }, (_, index) => index).map((index) => (
                     <img
                       key={`fanye-${index}`}
                       src={`/fanye-${index}.webp`}
@@ -771,43 +785,83 @@ const HomePage = () => {
                     className={`book-content-bg ${shouldShowContent() ? 'visible' : ''}`}
                   />
 
-                  {/* 当前内容的封面 */}
+                  {/* 左页封面 */}
                   {getCurrentContent() && (() => {
                     const content = getCurrentContent()
                     const maskStyle = getMaskStyle()
                     const hasCustomMask = content?.maskConfig !== undefined
+                    const leftIndex = currentContentIndex
 
                     return (
                       <img
                         src={content.coverImage}
-                        alt="Book Cover"
-                        className={`book-content-image ${shouldShowContent() ? 'visible' : ''} ${hasCustomMask ? 'custom-mask' : ''}`}
-                        onClick={handleViewContent}
+                        alt="Left Page Cover"
+                        className={`book-content-image book-content-left ${shouldShowContent() ? 'visible' : ''} ${hasCustomMask ? 'custom-mask' : ''}`}
+                        onClick={(e) => handleViewContent(e, leftIndex)}
+                        style={{ cursor: 'pointer', ...maskStyle }}
+                      />
+                    )
+                  })()}
+
+                  {/* 右页封面 */}
+                  {contents.length > 0 && (() => {
+                    const rightIndex = (currentContentIndex + 1) % contents.length
+                    const content = contents[rightIndex]
+                    if (!content) return null
+
+                    // 获取右页的 maskStyle（如果有配置）
+                    const maskConfig = content?.maskConfig
+                    const maskStyle = maskConfig ? {
+                      '--mask-top': `${maskConfig.top}%`,
+                      '--mask-bottom': `${maskConfig.bottom}%`,
+                      '--mask-left': `${maskConfig.left}%`,
+                      '--mask-right': `${maskConfig.right}%`,
+                      '--mask-radial-center': maskConfig.radialCenter,
+                      '--mask-radial-size': `${maskConfig.radialSize}%`
+                    } : {}
+                    const hasCustomMask = maskConfig !== undefined
+
+                    return (
+                      <img
+                        src={content.coverImage}
+                        alt="Right Page Cover"
+                        className={`book-content-image book-content-right ${shouldShowContent() ? 'visible' : ''} ${hasCustomMask ? 'custom-mask' : ''}`}
+                        onClick={(e) => handleViewContent(e, rightIndex)}
                         style={{ cursor: 'pointer', ...maskStyle }}
                       />
                     )
                   })()}
                 </div>
 
-                {/* 只在 BOOK 状态显示导航按钮 */}
-                {appState === APP_STATES.BOOK && contents.length > 1 && (
-                  <div className="navigation-buttons">
+                {/* 翻页指示交互层 */}
+                {appState === APP_STATES.BOOK && (
+                  <div className="navigation-cues">
                     <button
-                      className="nav-button nav-prev transparent-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleSwitchContent('prev')
-                      }}
-                      aria-label="Previous article"
-                    />
+                      className="nav-cue nav-cue-left"
+                      onClick={(e) => { e.stopPropagation(); handleSwitchContent('prev'); }}
+                      aria-label="上一页"
+                    >
+                      <div className="cue-arrow">
+                        <svg width="24" height="40" viewBox="0 0 24 40">
+                          <path d="M18 10l-10 10 10 10M12 10l-10 10 10 10" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                    </button>
+
                     <button
-                      className="nav-button nav-next transparent-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleSwitchContent('next')
-                      }}
-                      aria-label="Next article"
-                    />
+                      className="nav-cue nav-cue-right"
+                      onClick={(e) => { e.stopPropagation(); handleSwitchContent('next'); }}
+                      aria-label="下一页"
+                    >
+                      <div className="cue-content">
+                        <div className="cue-arrow">
+                          <svg width="24" height="40" viewBox="0 0 24 40">
+                            <path d="M6 10l10 10-10 10M12 10l10 10-10 10" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                        <span className="cue-text">点击翻页</span>
+                      </div>
+                    </button>
                   </div>
                 )}
               </div>
@@ -830,8 +884,8 @@ const HomePage = () => {
           )}
 
           {/* 内容详情覆盖层（内联组件） */}
-          {appState === APP_STATES.CONTENT && getCurrentContent() && (() => {
-            const ContentComponent = getCurrentContent().Component
+          {appState === APP_STATES.CONTENT && getViewingContent() && (() => {
+            const ContentComponent = getViewingContent().Component
             return (
               <div className="back-view-overlay active" onClick={handleCloseContent}>
                 <div

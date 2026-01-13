@@ -3,16 +3,15 @@
   height: 100%;
   background: #fff;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   overflow: hidden;
 }
 
 .image-container {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .scene-wrapper {
@@ -25,18 +24,23 @@
   width: 100vw;
   height: 100vh;
   object-fit: cover;
-  object-position: top;
+  object-position: bottom;
   display: block;
 }
 
 .book-anchor {
   position: absolute;
-  width: 20%;
-  top: 5%;
-  right: 35%;
+  width: 22%;
+  height: 30%;
+  /* 给一个高度，让对齐生效 */
+  bottom: 26%;
+  right: 32%;
   /* Anchor is just for positioning, minimal styles */
   z-index: 100;
   /* Ensure it stays above when expanded */
+  display: flex;
+  align-items: flex-end;
+  /* 让内容对齐到底部 */
 }
 
 .book-container {
@@ -51,6 +55,7 @@
 }
 
 .book-rotator {
+  position: relative;
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
@@ -65,6 +70,8 @@
   width: 100%;
   height: auto;
   object-fit: contain;
+  object-position: bottom;
+  /* 让图片对齐到底部 */
   opacity: 0;
   pointer-events: none;
   /* Prevent blocking clicks on book-content-image */
@@ -73,6 +80,12 @@
 
 .book-image-layer.visible {
   opacity: 1;
+}
+
+/* book-5 单独缩小，使用底部对齐以匹配翻页动画 */
+.book-image-layer[src="/book-5.webp"] {
+  transform: scale(0.85) translateY(-7%);
+  transform-origin: center bottom;
 }
 
 
@@ -101,22 +114,34 @@
 
 .book-content-image {
   grid-area: stack;
-  width: 50%;
-  max-height: 85%;
-  place-self: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 33%;
+  height: auto;
+  max-height: 70%;
   object-fit: contain;
+  object-position: center;
   opacity: 0;
   pointer-events: none;
   /* Critical: fix click interception in INITIAL state */
   transition: opacity 0.2s ease-out;
   /* Instant disappear turned into fast fade */
   z-index: 10;
-  transform: translateX(10%) translateY(-2%);
-  /* Shift to right page */
   -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%), radial-gradient(ellipse at 50% 55%, black 60%, transparent 100%);
   mask-image: linear-gradient(to bottom, transparent, black 5%), radial-gradient(ellipse at 50% 55%, black 60%, transparent 100%);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
+}
+
+/* 左页封面 */
+.book-content-left {
+  transform: translate(calc(-50% - 55%), calc(-50% - 2%));
+}
+
+/* 右页封面 */
+.book-content-right {
+  transform: translate(calc(-50% + 59%), calc(-50% - 2%));
 }
 
 .book-content-image.visible {
@@ -194,7 +219,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   /* 隐藏滚动条但保留滚动功能 */
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Chrome/Safari/Edge 隐藏滚动条 */
@@ -220,12 +246,12 @@
 }
 
 .book-container.breathing {
-  animation: breathe 3s ease-in-out infinite;
+  /* animation: breathe 3s ease-in-out infinite; */
   cursor: pointer;
 }
 
 .book-container.breathing:hover {
-  animation-duration: 1.5s;
+  /* animation-duration: 1.5s; */
   filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.9));
   /* Stronger golden highlight */
   transform: scale(1.05);
@@ -241,56 +267,94 @@
   filter: drop-shadow(0 0 30px rgba(255, 200, 87, 0.7));
 }
 
-/* 翻页动画图层 */
+/* 翻页动画图层 - 脱离文档流，不撑高容器 */
 .flip-animation-layer {
-  grid-area: stack;
+  position: absolute;
+  bottom: 0;
+  left: 0;
   width: 100%;
   height: auto;
   object-fit: contain;
   opacity: 0;
   z-index: 11;
   pointer-events: none;
+  /* 与 book-5.webp 保持相同的缩放比例和位置偏移 */
+  transform: scale(0.85) translateY(-7%);
+  transform-origin: center bottom;
 }
 
 .flip-animation-layer.visible {
   opacity: 1;
 }
 
-/* 导航按钮 */
-.navigation-buttons {
+/* 翻页指示交互层 */
+.navigation-cues {
   position: absolute;
-  bottom: -24px;
-  /* Moved up to be visible */
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  /* 确保在封面图层(z-index: 10)之上 */
   display: flex;
-  gap: 20px;
-  z-index: 101;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.nav-button {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: block;
+.nav-cue {
+  pointer-events: auto;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
   border: none;
-  background-color: transparent;
-  background-image: url('/arrow.webp');
-  background-size: 200% 100%;
-  /* Sprite: Left | Right */
-  background-repeat: no-repeat;
-  transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), filter 0.2s;
-  box-shadow: none;
+  cursor: pointer;
+  /* 极大的点击区域：上下80px，左右60px */
+  padding: 80px 60px;
+  opacity: 0.25;
+  transition: opacity 0.3s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Specific sprite positions */
-.nav-prev {
-  background-position: 0% 0;
+.nav-cue:hover {
+  opacity: 0.7;
 }
 
-.nav-next {
-  background-position: 100% 0;
+.nav-cue-left {
+  left: -80px;
+  /* 移出到书本左侧 */
+}
+
+.nav-cue-right {
+  right: -80px;
+  /* 移出到书本右侧 */
+  opacity: 0.55;
+  /* 默认更亮一点，方便用户发现 */
+}
+
+.cue-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cue-text {
+  color: white;
+  font-size: 10px;
+  font-family: "Noto Serif SC", serif;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+.cue-arrow svg {
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.3));
 }
 
 .nav-button.transparent-btn {
@@ -307,8 +371,10 @@
   background-color: transparent;
 }
 
-.nav-button.transparent-btn:active {
-  transform: scale(0.95);
+.nav-button.transparent-btn:active,
+.nav-button.transparent-btn.keyboard-pressed {
+  transform: scale(0.85) translateY(2px);
+  filter: brightness(0.9);
 }
 
 /* 加载覆盖层 */

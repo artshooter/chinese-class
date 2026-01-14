@@ -826,13 +826,19 @@ const HomePage = () => {
                     const leftIndex = currentContentIndex
 
                     return (
-                      <img
-                        src={content.coverImage}
-                        alt="Left Page Cover"
-                        className={`book-content-image book-content-left ${shouldShowContent() ? 'visible' : ''} ${hasCustomMask ? 'custom-mask' : ''}`}
-                        onClick={(e) => handleViewContent(e, leftIndex)}
-                        style={{ cursor: 'pointer', ...maskStyle }}
-                      />
+                      <>
+                        <img
+                          src={content.coverImage}
+                          alt="Left Page Cover"
+                          className={`book-content-image book-content-left ${shouldShowContent() ? 'visible' : ''} ${hasCustomMask ? 'custom-mask' : ''}`}
+                          style={maskStyle}
+                        />
+                        {/* 透明点击层 */}
+                        <div
+                          className={`book-content-clickzone book-content-left ${shouldShowContent() ? 'visible' : ''}`}
+                          onClick={(e) => handleViewContent(e, leftIndex)}
+                        />
+                      </>
                     )
                   })()}
 
@@ -855,13 +861,19 @@ const HomePage = () => {
                     const hasCustomMask = maskConfig !== undefined
 
                     return (
-                      <img
-                        src={content.coverImage}
-                        alt="Right Page Cover"
-                        className={`book-content-image book-content-right ${shouldShowContent() ? 'visible' : ''} ${hasCustomMask ? 'custom-mask' : ''}`}
-                        onClick={(e) => handleViewContent(e, rightIndex)}
-                        style={{ cursor: 'pointer', ...maskStyle }}
-                      />
+                      <>
+                        <img
+                          src={content.coverImage}
+                          alt="Right Page Cover"
+                          className={`book-content-image book-content-right ${shouldShowContent() ? 'visible' : ''} ${hasCustomMask ? 'custom-mask' : ''}`}
+                          style={maskStyle}
+                        />
+                        {/* 透明点击层 */}
+                        <div
+                          className={`book-content-clickzone book-content-right ${shouldShowContent() ? 'visible' : ''}`}
+                          onClick={(e) => handleViewContent(e, rightIndex)}
+                        />
+                      </>
                     )
                   })()}
                 </div>

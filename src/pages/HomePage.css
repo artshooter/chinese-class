@@ -33,8 +33,8 @@
   width: 22%;
   height: 30%;
   /* 给一个高度，让对齐生效 */
-  bottom: 26%;
-  right: 32%;
+  bottom: 23%;
+  right: 29%;
   /* Anchor is just for positioning, minimal styles */
   z-index: 100;
   /* Ensure it stays above when expanded */
@@ -52,6 +52,10 @@
   transition: transform 0.2s cubic-bezier(0.1, 0.9, 0.2, 1.0);
   will-change: transform;
   cursor: pointer;
+  /* 禁止选中和拖拽 */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 
 .book-rotator {
@@ -146,10 +150,32 @@
 
 .book-content-image.visible {
   opacity: 1;
-  pointer-events: auto;
+  pointer-events: none;
+  /* 图片本身不响应点击，由透明点击层处理 */
   /* Reduced delay from 0.2s to 0.05s for faster appearance */
   transition: opacity 0.3s 0.05s ease;
   /* Fade in with delay */
+}
+
+/* 透明点击层 - 覆盖整个封面区域，确保点击有效 */
+.book-content-clickzone {
+  grid-area: stack;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 33%;
+  height: 70%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 15;
+  /* 在封面图片(z-index: 10)之上 */
+  cursor: pointer;
+  /* 调试时可取消注释查看点击区域 */
+  /* background: rgba(255, 0, 0, 0.2); */
+}
+
+.book-content-clickzone.visible {
+  pointer-events: auto;
 }
 
 /* 自定义模糊效果（当配置了 maskConfig 时使用） */
@@ -246,12 +272,12 @@
 }
 
 .book-container.breathing {
-  /* animation: breathe 3s ease-in-out infinite; */
+  animation: breathe 3s ease-in-out infinite;
   cursor: pointer;
 }
 
 .book-container.breathing:hover {
-  /* animation-duration: 1.5s; */
+  animation: breathe 1.5s ease-in-out infinite;
   filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.9));
   /* Stronger golden highlight */
   transform: scale(1.05);
@@ -310,8 +336,8 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  /* 极大的点击区域：上下80px，左右60px */
-  padding: 80px 60px;
+  /* 适中的点击区域：上下50px，左右35px */
+  padding: 50px 35px;
   opacity: 0.25;
   transition: opacity 0.3s, transform 0.2s;
   display: flex;
@@ -332,8 +358,13 @@
 .nav-cue-right {
   right: -80px;
   /* 移出到书本右侧 */
-  opacity: 0.55;
+  opacity: 0.7;
   /* 默认更亮一点，方便用户发现 */
+}
+
+.nav-cue-right:hover {
+  opacity: 0.9;
+  /* hover 时更亮 */
 }
 
 .cue-content {

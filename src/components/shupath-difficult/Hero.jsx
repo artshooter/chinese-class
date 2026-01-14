@@ -15,6 +15,7 @@ export default function Hero() {
                     src={heroImg}
                     alt="蜀道难"
                     className="w-full h-auto"
+                    style={{ aspectRatio: '3616 / 1184' }}
                 />
             </motion.div>
 

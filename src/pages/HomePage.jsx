@@ -10,6 +10,15 @@ import ChuShiBiaoContent from '../components/chu-shi-biao/index.jsx'
 import FacingTheSeaContent from '../components/facing-the-sea/Content.jsx'
 import ShupathDifficultContent from '../components/shupath-difficult/Content.jsx'
 
+// 导入 Hero 图片用于预加载
+import facingTheSeaHero from '../components/facing-the-sea/facing-the-sea.webp'
+import peachBlossomHero from '../components/peach-blossom-spring/peach-blossom-spring.webp'
+import chuShiBiaoHero from '../components/chu-shi-biao/chu-shi-biao.webp'
+import shupathDifficultHero from '../components/shupath-difficult/shupath-difficult.webp'
+import backViewHero from '../components/back-view/back-view.webp'
+import guxiangHero from '../components/guxiang/runtu.webp'
+import farewellHero from '../components/farewell-to-cambridge/farewell-to-cambridge.webp'
+
 // ============ 常量定义 ============
 
 const APP_STATES = {
@@ -50,6 +59,7 @@ const CONTENTS = [
     id: 'facing-the-sea',
     title: '面朝大海，春暖花开',
     coverImage: '/facing-the-sea.webp',
+    heroImage: facingTheSeaHero,
     Component: FacingTheSeaContent,
     maskConfig: {
       top: 5,
@@ -64,6 +74,7 @@ const CONTENTS = [
     id: 'peach-blossom-spring',
     title: '桃花源记',
     coverImage: '/peach-blossom-spring.webp',
+    heroImage: peachBlossomHero,
     Component: PeachBlossomContent,
     maskConfig: {
       top: 0,
@@ -78,6 +89,7 @@ const CONTENTS = [
     id: 'chu-shi-biao',
     title: '出师表',
     coverImage: '/chu-shi-biao.webp',
+    heroImage: chuShiBiaoHero,
     Component: ChuShiBiaoContent,
     maskConfig: {
       top: 15,
@@ -92,6 +104,7 @@ const CONTENTS = [
     id: 'shupath-difficult',
     title: '蜀道难',
     coverImage: '/shupath-difficult.webp',
+    heroImage: shupathDifficultHero,
     Component: ShupathDifficultContent,
     maskConfig: {
       top: 0,
@@ -106,18 +119,21 @@ const CONTENTS = [
     id: 'article1',
     title: '背影',
     coverImage: '/back-view.webp',
+    heroImage: backViewHero,
     Component: BackViewContent
   },
   {
     id: 'article2',
     title: '故乡',
     coverImage: '/rentu.webp',
+    heroImage: guxiangHero,
     Component: GuxiangContent
   },
   {
     id: 'article3',
     title: '再别康桥',
     coverImage: '/farewell-to-cambridge.webp',
+    heroImage: farewellHero,
     Component: FarewellContent
   }
 ]
@@ -509,6 +525,23 @@ const HomePage = () => {
 
     window.addEventListener('mousemove', handleMouseMove)
     return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [appState])
+
+  // 预加载所有文章的 Hero 图
+  useEffect(() => {
+    if (appState !== APP_STATES.BOOK) return
+
+    // 预加载所有文章的 Hero 图
+    const preloadHeroImages = async () => {
+      contents.forEach(content => {
+        if (content.heroImage) {
+          const img = new Image()
+          img.src = content.heroImage
+        }
+      })
+    }
+
+    preloadHeroImages()
   }, [appState])
 
   // 键盘导航

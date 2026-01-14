@@ -1,5 +1,8 @@
 import { motion } from 'framer-motion'
 import Hero from './Hero.jsx'
+import hourseImg from './hourse.webp'
+import seeSeaImg from './see-sea.webp'
+import endImg from './end.webp'
 
 export default function Content({ onBack }) {
     return (
@@ -39,7 +42,7 @@ export default function Content({ onBack }) {
                         <Line text="从明天起，做一个幸福的人" />
                         <LineWithImage
                             text="喂马，劈柴，周游世界"
-                            imageSrc="/src/components/facing-the-sea/hourse.webp"
+                            imageSrc={hourseImg}
                         />
                         <div className="mt-8">
                             <Line text="从明天起，关心粮食和蔬菜" />
@@ -54,7 +57,7 @@ export default function Content({ onBack }) {
                         <Line text="从明天起，和每一个亲人通信" />
                         <LineWithImage
                             text="告诉他们我的幸福"
-                            imageSrc="/src/components/facing-the-sea/see-sea.webp"
+                            imageSrc={seeSeaImg}
                         />
                         <LightningLine text="那幸福的闪电告诉我的" />
                         <Line text="我将告诉每一个人" />
@@ -104,7 +107,7 @@ export default function Content({ onBack }) {
                             我只愿
                         </p>
                         <motion.img
-                            src="/src/components/facing-the-sea/end.webp"
+                            src={endImg}
                             alt="面朝大海，春暖花开"
                             className="w-96 md:w-[30rem] h-auto object-cover rounded-2xl mt-4"
                             whileHover={{ scale: 1.05 }}

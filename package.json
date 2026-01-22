@@ -1,5 +1,5 @@
 {
-  "name": "class",
+  "name": "chinese-class",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -7,10 +7,18 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["chinese", "literature", "education", "interactive", "three.js", "react"],
+  "author": "ArtShooter",
+  "license": "MIT",
+  "description": "An immersive Chinese literature reading website with atmospheric design",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArtShooter/chinese-class.git"
+  },
+  "homepage": "https://github.com/ArtShooter/chinese-class#readme",
+  "bugs": {
+    "url": "https://github.com/ArtShooter/chinese-class/issues"
+  },
   "dependencies": {
     "@vitejs/plugin-react": "^5.1.2",
     "framer-motion": "^12.23.27",
